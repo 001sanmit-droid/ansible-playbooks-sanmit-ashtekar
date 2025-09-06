@@ -1,0 +1,55 @@
+# Title: System Health Audit for KVM VMs
+# Author: Er. Sanmit Ashtekar | AWS --> EC2 S3 VPC IAM SG EKS| IAC-Terraform | CT-Ansible | VMware-ESXi 6.7+| DOCKER | K8S | Linux | Windows | python | shell | Flask | Sqlite | Bootstrap5 | Jinja2.0
+# Description: This playbook deployes flask add route shoutout hello world and sqlite across selected KVM-based virtual machines.
+
+- name: Deploy Python3 and Flask on node1
+  hosts: node1
+  become: true
+  tasks:
+    - name: Ensure Python3 is installed
+      package:
+        name: python3
+        state: present
+
+    - name: Ensure pip is installed
+      package:
+        name: python3-pip
+        state: present
+
+    - name: Install Flask via pip
+      pip:
+        name: flask
+        executable: pip3
+
+    - name: Create basic Flask app
+      copy:
+        dest: /opt/flask_app/app.py
+        content: |
+          from flask import Flask
+          app = Flask(__name__)
+          @app.route('/')
+          def hello():
+              return "Hello from node1!"
+      notify: Restart Flask
+
+  handlers:
+    - name: Restart Flask
+      systemd:
+        name=flask_app
+        state=restarted
+        enabled=yes
+      ignore_errors: true  # fallback if systemd unit isn't defined yet
+
+- name: Deploy SQLite on node2
+  hosts: node2
+  become: true
+  tasks:
+    - name: Ensure SQLite is installed
+      package:
+        name: sqlite
+        state: present
+
+    - name: Create sample SQLite DB
+      command: sqlite3 /opt/data/sample.db "CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, name TEXT);"
+      args:
+        creates: /opt/data/sample.db

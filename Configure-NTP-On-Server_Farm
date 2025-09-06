@@ -1,0 +1,39 @@
+# Title: System Health Audit for KVM VMs
+# Author: Er. Sanmit Ashtekar | AWS --> EC2 S3 VPC IAM SG EKS| IAC-Terraform | CT-Ansible | VMware-ESXi 6.7+| DOCKER | K8S | Linux | Windows | python | shell | Flask | Sqlite | Bootstrap5 | Jinja2.0
+# Description: This playbook configures NTP service across all KVM-based virtual machines.
+
+---
+- name: Audit system health across KVM based VMs
+---
+- name: Configure NTP on KVM VMs
+  hosts: kvm_vms
+  become: true
+
+  vars:
+    ntp_package: chrony
+    ntp_service: chronyd
+    ntp_servers:
+      - 0.centos.pool.ntp.org
+      - 1.centos.pool.ntp.org
+      - 2.centos.pool.ntp.org
+
+  tasks:
+    - name: Install NTP package
+      package:
+        name: "{{ ntp_package }}"
+        state: present
+
+    - name: Configure NTP servers
+      lineinfile:
+        path: /etc/chrony.conf
+        regexp: '^server'
+        line: "server {{ item }} iburst"
+        state: present
+        create: yes
+      loop: "{{ ntp_servers }}"
+
+    - name: Ensure NTP service is enabled and running
+      service:
+        name: "{{ ntp_service }}"
+        state: started
+        enabled: yes

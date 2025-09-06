@@ -1,0 +1,30 @@
+---
+- name: Verify NTP sync status on KVM VMs
+  hosts: all
+  become: true
+  tasks:
+
+    - name: Check if chronyd service is active
+      systemd:
+        name: chronyd
+        state: started
+      register: chronyd_status
+      failed_when: chronyd_status.status.ActiveState != "active"
+
+    - name: Run chronyc sources to verify sync
+      command: chronyc sources
+      register: chronyc_output
+      changed_when: false
+
+    - name: Display NTP source status
+      debug:
+        var: chronyc_output.stdout_lines
+
+    - name: Check system time drift
+      command: timedatectl status
+      register: timedatectl_output
+      changed_when: false
+
+    - name: Display system time status
+      debug:
+        var: timedatectl_output.stdout_lines

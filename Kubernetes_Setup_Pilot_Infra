@@ -1,0 +1,69 @@
+- name: Kubernetes Cluster Setup
+  hosts: kvm_vms
+  become: yes
+  tasks:
+    - name: Disable swap
+      command: swapoff -a
+
+    - name: Ensure swap is disabled in fstab
+      replace:
+        path: /etc/fstab
+        regexp: '^.*swap.*$'
+        replace: ''
+
+    - name: Set hostname
+      hostname:
+        name: "{{ inventory_hostname }}"
+
+    - name: Update /etc/hosts
+      lineinfile:
+        path: /etc/hosts
+        line: "{{ hostvars[inventory_hostname]['ansible_host'] }} {{ inventory_hostname }}"
+        state: present
+
+    - name: Install containerd
+      yum:
+        name: containerd.io
+        state: present
+      when: ansible_os_family == 'RedHat'
+
+    - name: Configure sysctl for Kubernetes networking
+      copy:
+        dest: /etc/sysctl.d/k8s.conf
+        content: |
+          net.bridge.bridge-nf-call-ip6tables = 1
+          net.bridge.bridge-nf-call-iptables = 1
+      notify: Reload sysctl
+
+    - name: Install Kubernetes packages
+      yum:
+        name:
+          - kubelet
+          - kubeadm
+          - kubectl
+        state: present
+      when: ansible_os_family == 'RedHat'
+
+  handlers:
+    - name: Reload sysctl
+      command: sysctl --system
+
+- name: Initialize Control Plane
+  hosts: PILOT
+  become: yes
+  tasks:
+    - name: Initialize Kubernetes master
+      command: kubeadm init --pod-network-cidr=192.168.0.0/16
+      register: init_output
+
+    - name: Set up kubeconfig
+      copy:
+        dest: /root/.kube/config
+        content: "{{ lookup('file', '/etc/kubernetes/admin.conf') }}"
+
+- name: Join Worker Nodes
+  hosts: NODE1,NODE2
+  become: yes
+  tasks:
+    - name: Join cluster
+      command: kubeadm join <MASTER_IP>:6443 --token <TOKEN> --discovery-token-ca-cert-hash sha256:<HASH>

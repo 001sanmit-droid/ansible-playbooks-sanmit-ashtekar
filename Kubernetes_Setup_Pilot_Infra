@@ -1,5 +1,5 @@
 # Title: Setup Kubernetes On Pilot Infra
-# Author: Er. Sanmit Ashtekar | AWS --> EC2 S3 VPC IAM SG EKS| IAC-Terraform | CM-Ansible | VMware-ESXi 6.7+| DOCKER | Kubernetes | Linux | Windows | python | shell | Flask | Sqlite | Bootstrap5 | Jinja2.0
+# Author: Er. Sanmit Ashtekar | AWS --> EC2 S3 VPC IAM SG EKS| IAC-Terraform | CM-Ansible | VMware-ESXi 6.7+| DOCKER | Kubernetes | Linux | Windows | Solaris | python | shell | Flask | Sqlite | Bootstrap5 | Jinja2.0
 # Description: This playbook setsup Kubernetes Infra across all KVM-based virtual machines.
 # Command: $ sudo ansible-playbook -i inventories/production/hosts.ini playbooks/kubernetes_setup.yml 
 
